@@ -1,53 +1,59 @@
-# PulseStream // Autonomous Reliability & Vercel Failure Demo
+# PulseStream // Cloud Telemetry & Autonomous Reliability Testbed
 
-> A mock web application designed as a testbed for automated error-detection, Vercel log-scraping, and autonomous GitHub code repair agents.
+> A mock web application designed as a testbed for automated error-detection, Vercel build & runtime log scraping, and autonomous GitHub code repair agents.
 
 ---
 
 ## 🎯 Purpose of this Repository
 
-This repository is intentionally structured to produce a **reproducible deployment & build failure** when deployed on Vercel or when built locally via `npm run build`.
+This repository provides two realistic reliability test scenarios for AI agents, PatchR, and automated remediation bots:
 
-It is meant to demonstrate automated failure detection workflows:
-1. **Triggering Deployment Failure**: Vercel triggers `npm run build` which throws an unresolved import error.
-2. **Log Ingestion**: An autonomous agent / webhook pipeline reads the Vercel deployment error logs or GitHub issues.
-3. **Automated Diagnosis & Fix**: The agent parses the codebase, locates the typo in `src/main.js`, applies the patch, opens a PR / commits to `main`, and resolves the build failure.
+1. **Build / Deploy Failure Scenario** (Pre-Deployment)
+2. **Serverless Runtime 500 Failure Scenario** (Post-Deployment / In Production)
 
 ---
 
-## 🚨 The Intentional Failure Details
+## 🚨 Production Issue Scenario: Serverless 500 Runtime Exception
 
-### The Error in `src/main.js` (Line 11)
+### How to Trigger in Production:
+- **Option 1**: Visit `https://<your-vercel-domain>/api/telemetry` directly in your browser or via curl.
+- **Option 2**: Click the **"Live Health Check"** button on the live dashboard.
+
+### What Happens:
+1. The project builds and deploys to Vercel with **0 build errors** (HTTP 200 on the landing page).
+2. When the Serverless API route `/api/telemetry` is invoked, it crashes at runtime with a **500 Internal Server Error**.
+
+### The Bug in [api/telemetry.js](api/telemetry.js) (Line 23):
 ```javascript
-// Current Broken Code:
-import { renderMetrics } from './components/metrics-chart.js';
+// Current Bug: Attempting to access property on undefined when req.query.cluster is missing
+const clusterStatus = cluster.status.toUpperCase();
 ```
 
-### Expected Vercel Deployment Log Output
+### Expected Vercel Runtime Log:
+*(Found under **Vercel Project Dashboard → Logs**)*
 ```text
-[vite]: Rollup failed to resolve import "./components/metrics-chart.js" from "src/main.js".
-This is most likely not the problem with Vite itself, but with your project configuration.
-error during build:
-Error: [vite]: Rollup failed to resolve import "./components/metrics-chart.js" from "src/main.js".
-    at error (file:///vercel/path0/node_modules/rollup/dist/es/shared/parseAst.js:337:30)
-    at ModuleLoader.handleInvalidResolvedId (file:///vercel/path0/node_modules/rollup/dist/es/shared/node-entry.js:19154:24)
-Error: Command "npm run build" exited with 1
+[ERROR] 22:15:02.124 CRITICAL [500] Telemetry Runtime Exception: Cannot read properties of undefined (reading 'status')
+TypeError: Cannot read properties of undefined (reading 'status')
+    at handler (/vercel/path0/api/telemetry.js:23:36)
+    at ...
 ```
 
 ---
 
 ## 🛠️ The Solution (How the Agent / You Fixes It)
 
-In [src/main.js](src/main.js), replace `./components/metrics-chart.js` with `./components/metrics.js`:
+In [api/telemetry.js](api/telemetry.js), provide a safe fallback or check:
 
 ```diff
-- import { renderMetrics } from './components/metrics-chart.js';
-+ import { renderMetrics } from './components/metrics.js';
+- const clusterStatus = cluster.status.toUpperCase();
++ const clusterData = cluster || { status: 'optimal' };
++ const clusterStatus = clusterData.status.toUpperCase();
 ```
 
-Once fixed:
-- `npm run build` succeeds cleanly.
-- Vercel automatically deploys the modern live telemetry dashboard.
+Once patched and pushed to GitHub:
+- Vercel automatically deploys the hotfix.
+- Calling `/api/telemetry` returns `200 OK` with valid telemetry JSON.
+- The live dashboard console turns green.
 
 ---
 
@@ -58,13 +64,12 @@ Once fixed:
 npm install
 ```
 
-### 2. Verify the Failure (Build Test)
+### 2. Build Test (Verifies build passes cleanly)
 ```bash
 npm run build
 ```
-*(You will see the build fail with the unresolved import error above).*
 
-### 3. Test Local Development Server
+### 3. Local Development
 ```bash
 npm run dev
 ```
@@ -74,6 +79,6 @@ npm run dev
 ## 📦 Vercel Deployment Settings
 
 - **Framework Preset**: Vite
-- **Build Command**: `npm run build` (or `vite build`)
+- **Build Command**: `npm run build`
 - **Output Directory**: `dist`
 - **Install Command**: `npm install`

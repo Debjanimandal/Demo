@@ -28,18 +28,54 @@ function initApp() {
 function setupInteractions() {
   const triggerBtn = document.getElementById('btn-trigger-action');
   if (triggerBtn) {
-    triggerBtn.addEventListener('click', () => {
+    triggerBtn.addEventListener('click', async () => {
       const logStream = document.getElementById('audit-log-stream');
+      const time = new Date().toTimeString().split(' ')[0];
+
       if (logStream) {
-        const time = new Date().toTimeString().split(' ')[0];
-        const log = document.createElement('div');
-        log.className = 'log-line';
-        log.innerHTML = `
+        const pingLog = document.createElement('div');
+        pingLog.className = 'log-line';
+        pingLog.innerHTML = `
           <span class="log-time">[${time}]</span>
-          <span class="log-level log-success">[HEALTH]</span>
-          <span class="log-msg">Manual health check passed (4 clusters online, 0 errors)</span>
+          <span class="log-level log-info">[HTTP]</span>
+          <span class="log-msg">Invoking Serverless Endpoint: GET /api/telemetry...</span>
         `;
-        logStream.prepend(log);
+        logStream.prepend(pingLog);
+      }
+
+      try {
+        const res = await fetch('/api/telemetry');
+        const data = await res.json();
+
+        if (logStream) {
+          const log = document.createElement('div');
+          log.className = 'log-line';
+          if (res.ok) {
+            log.innerHTML = `
+              <span class="log-time">[${time}]</span>
+              <span class="log-level log-success">[200 OK]</span>
+              <span class="log-msg">Telemetry sync nominal: ${data.status}</span>
+            `;
+          } else {
+            log.innerHTML = `
+              <span class="log-time">[${time}]</span>
+              <span class="log-level log-warn" style="color: var(--danger);">[500 ERROR]</span>
+              <span class="log-msg" style="color: #ff7b72;">Serverless Crash: "${data.message || data.error}" (Check Vercel Runtime Logs)</span>
+            `;
+          }
+          logStream.prepend(log);
+        }
+      } catch (err) {
+        if (logStream) {
+          const errLog = document.createElement('div');
+          errLog.className = 'log-line';
+          errLog.innerHTML = `
+            <span class="log-time">[${time}]</span>
+            <span class="log-level log-warn" style="color: var(--danger);">[FETCH FAIL]</span>
+            <span class="log-msg" style="color: #ff7b72;">${err.message}</span>
+          `;
+          logStream.prepend(errLog);
+        }
       }
     });
   }
