@@ -10,7 +10,7 @@ import { renderDashboardView } from './components/dashboard.js';
 // 🔧 THE FIX FOR AUTOMATED REPAIR AGENTS / PATCH PIPELINES:
 // Change './components/metrics-chart.js' to './components/metrics.js'
 // ==============================================================================
-import { renderMetrics } from './components/metrics-chart.js';
+import { renderMetrics } from './components/metrics.js';
 
 function initApp() {
   const root = document.getElementById('dashboard-root');
