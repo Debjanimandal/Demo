@@ -80,6 +80,45 @@ function setupInteractions() {
     });
   }
 
+  const prodErrorBtn = document.getElementById('btn-trigger-prod-error');
+  if (prodErrorBtn) {
+    prodErrorBtn.addEventListener('click', async () => {
+      const statusDiv = document.getElementById('error-trigger-status');
+      const logStream = document.getElementById('audit-log-stream');
+      const time = new Date().toTimeString().split(' ')[0];
+
+      if (statusDiv) {
+        statusDiv.style.display = 'block';
+        statusDiv.style.color = '#f87171';
+        statusDiv.innerHTML = `⏳ Sending request to <code>/api/error-trigger</code>...`;
+      }
+
+      try {
+        const res = await fetch('/api/error-trigger');
+        const data = await res.json();
+
+        if (statusDiv) {
+          statusDiv.innerHTML = `❌ <strong>HTTP 500 Recorded!</strong> Error log dispatched to Vercel. Open your <a href="https://vercel.com/ayushman-guptas-projects-1a929afd/demo/logs" target="_blank" style="color: #60a5fa; text-decoration: underline;">Vercel Logs tab</a> and click <strong>Refresh Query</strong> to see the log!`;
+        }
+
+        if (logStream) {
+          const log = document.createElement('div');
+          log.className = 'log-line';
+          log.innerHTML = `
+            <span class="log-time">[${time}]</span>
+            <span class="log-level log-warn" style="color: var(--danger);">[500 CRASH]</span>
+            <span class="log-msg" style="color: #ff7b72;">/api/error-trigger: "${data.message}"</span>
+          `;
+          logStream.prepend(log);
+        }
+      } catch (err) {
+        if (statusDiv) {
+          statusDiv.innerHTML = `❌ Request sent. Error recorded in Vercel backend logs.`;
+        }
+      }
+    });
+  }
+
   const themeBtn = document.getElementById('theme-toggle');
   if (themeBtn) {
     themeBtn.addEventListener('click', () => {
