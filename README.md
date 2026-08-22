@@ -6,54 +6,58 @@
 
 ## 🎯 Purpose of this Repository
 
-This repository provides two realistic reliability test scenarios for AI agents, PatchR, and automated remediation bots:
+This repository provides realistic reliability test scenarios for AI agents, PatchR, and automated remediation bots:
 
 1. **Build / Deploy Failure Scenario** (Pre-Deployment)
-2. **Serverless Runtime 500 Failure Scenario** (Post-Deployment / In Production)
+2. **Serverless Runtime 500 Failure Scenario with Live Toggle** (Post-Deployment / In Production)
 
 ---
 
-## 🚨 Production Issue Scenario: Serverless 500 Runtime Exception
+## 🎛️ Live Reliability Simulator (Interactive In-App Toggle)
 
-### How to Trigger in Production:
-- **Option 1**: Visit `https://<your-vercel-domain>/api/telemetry` directly in your browser or via curl.
-- **Option 2**: Click the **"Live Health Check"** button on the live dashboard.
+On the live deployed website, there is an interactive **Reliability Simulator Card** with a toggle switch:
 
-### What Happens:
-1. The project builds and deploys to Vercel with **0 build errors** (HTTP 200 on the landing page).
-2. When the Serverless API route `/api/telemetry` is invoked, it crashes at runtime with a **500 Internal Server Error**.
+### 🔴 Failure Mode (500 ERROR)
+- **Switch Position**: Left (Red)
+- **Action**: Clicking the button calls `/api/error-trigger?mode=error`.
+- **Result**:
+  - Webpage receives HTTP `500 Internal Server Error`.
+  - **Vercel Dashboard → Logs** records a critical red 500 stack trace:
+    ```text
+    🚨 CRITICAL ERROR: Unhandled exception in telemetry worker
+    TypeError: Cannot read properties of undefined (reading 'cluster_id') at /api/error-trigger.js:25:25
+    ```
 
-### The Bug in [api/telemetry.js](api/telemetry.js) (Line 23):
+### 🟢 Healthy Mode (200 OK)
+- **Switch Position**: Right (Green)
+- **Action**: Clicking the button calls `/api/error-trigger?mode=healthy`.
+- **Result**:
+  - Webpage receives HTTP `200 OK`.
+  - **Vercel Dashboard → Logs** records a clean operational log:
+    ```text
+    [INFO] [200 OK] Telemetry pipeline operational. Auto-remediation validated.
+    ```
+
+---
+
+## 🛠️ The Serverless Backend Code ([api/error-trigger.js](api/error-trigger.js))
+
 ```javascript
-// Current Bug: Attempting to access property on undefined when req.query.cluster is missing
-const clusterStatus = cluster.status.toUpperCase();
+export default function handler(req, res) {
+  const { mode } = req.query;
+
+  if (mode === 'healthy') {
+    // 🟢 Healthy State
+    console.log('[INFO] [200 OK] Telemetry pipeline operational.');
+    return res.status(200).json({ status: 'healthy', message: 'System operating normally.' });
+  }
+
+  // 🔴 Error State
+  console.error(`🚨 CRITICAL ERROR: Unhandled exception in telemetry worker`);
+  console.error(`TypeError: Cannot read properties of undefined (reading 'cluster_id') at /api/error-trigger.js:25:25`);
+  return res.status(500).json({ error: 'Internal Server Error', message: "Cannot read properties of undefined (reading 'cluster_id')" });
+}
 ```
-
-### Expected Vercel Runtime Log:
-*(Found under **Vercel Project Dashboard → Logs**)*
-```text
-[ERROR] 22:15:02.124 CRITICAL [500] Telemetry Runtime Exception: Cannot read properties of undefined (reading 'status')
-TypeError: Cannot read properties of undefined (reading 'status')
-    at handler (/vercel/path0/api/telemetry.js:23:36)
-    at ...
-```
-
----
-
-## 🛠️ The Solution (How the Agent / You Fixes It)
-
-In [api/telemetry.js](api/telemetry.js), provide a safe fallback or check:
-
-```diff
-- const clusterStatus = cluster.status.toUpperCase();
-+ const clusterData = cluster || { status: 'optimal' };
-+ const clusterStatus = clusterData.status.toUpperCase();
-```
-
-Once patched and pushed to GitHub:
-- Vercel automatically deploys the hotfix.
-- Calling `/api/telemetry` returns `200 OK` with valid telemetry JSON.
-- The live dashboard console turns green.
 
 ---
 

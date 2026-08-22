@@ -72,22 +72,31 @@ export function renderDashboardView() {
         </div>
       </div>
     </div>
-    <div class="card grid-col-12" style="border: 1px solid rgba(239, 68, 68, 0.4); background: linear-gradient(180deg, rgba(239, 68, 68, 0.08) 0%, rgba(22, 27, 34, 0.8) 100%);">
+    <div id="testbed-card" class="card grid-col-12" style="border: 1px solid rgba(239, 68, 68, 0.4); background: linear-gradient(180deg, rgba(239, 68, 68, 0.08) 0%, rgba(22, 27, 34, 0.8) 100%); transition: all 0.3s ease;">
       <div class="card-header">
-        <span class="card-title" style="color: #f87171;">
-          <span>🔥</span> Reliability Testbed: Trigger Production Log Error
+        <span id="testbed-title" class="card-title" style="color: #f87171;">
+          <span id="testbed-icon">🔥</span> Live Reliability Simulator
         </span>
-        <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4);">
-          Vercel Logs Generator
-        </span>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div class="toggle-wrapper">
+            <span class="toggle-label" id="toggle-label">Failure Mode (500)</span>
+            <label class="switch">
+              <input type="checkbox" id="mode-toggle-switch">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <span id="testbed-badge" class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4);">
+            Active State: 500 ERROR
+          </span>
+        </div>
       </div>
       <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-        <p style="font-size: 0.9rem; color: var(--text-secondary); max-width: 680px;">
-          Click the button below to send an API request to <code>/api/error-trigger</code>. This will immediately log an unhandled <code>TypeError 500</code> exception into your <strong>Vercel Dashboard &rarr; Logs</strong> page for your automated agent to read and fix.
+        <p id="testbed-desc" style="font-size: 0.9rem; color: var(--text-secondary); max-width: 680px;">
+          Currently set to <strong>Failure Mode</strong>. Clicking the button will execute <code>/api/error-trigger?mode=error</code>, writing an unhandled <code>TypeError 500</code> into your <strong>Vercel Runtime Logs</strong>. Flip the switch above to reverse to <strong>Healthy Mode (200 OK)</strong>.
         </p>
-        <button id="btn-trigger-prod-error" class="btn" style="background: linear-gradient(135deg, #ef4444, #b91c1c); color: #fff; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);">
-          <span>💥</span>
-          <span>Click to Generate Error in Vercel Logs</span>
+        <button id="btn-trigger-prod-error" class="btn" style="background: linear-gradient(135deg, #ef4444, #b91c1c); color: #fff; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4); transition: all 0.3s ease;">
+          <span id="btn-icon">💥</span>
+          <span id="btn-text">Generate Error in Vercel Logs</span>
         </button>
       </div>
       <div id="error-trigger-status" style="margin-top: 0.75rem; font-family: var(--font-mono); font-size: 0.8rem; display: none;"></div>
