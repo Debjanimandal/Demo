@@ -6,7 +6,7 @@ export function renderDashboardView() {
   return `
     <div class="card grid-col-8">
       <div class="card-header">
-        <span class="card-title">🖥️ Active Service Clusters</span>
+         Clusters</span>
         <span class="badge badge-pulse">4 Nodes Active</span>
       </div>
       <div class="service-list">
