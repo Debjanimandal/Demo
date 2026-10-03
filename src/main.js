@@ -1,1 +1,1 @@
-import { renderMetrics } from './component
+import { renderMetrics } from './components/metrics.js'
